@@ -1,0 +1,13 @@
+[package]
+name = "levelbot"
+version = "0.1.0"
+authors = ["leo60228 <iakornfeld@gmail.com>"]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+async-std = {version = "1.4.0", features = ["unstable"]}
+serenity = "0.8.0"
+tide = "0.5.1"
+http = "0.1.20"
+dotenv = "0.15.0"
