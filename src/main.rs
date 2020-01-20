@@ -65,7 +65,7 @@ pub async fn http_server(sender: Sender<File>, handle: GetLevelsHandle) -> Resul
                     .lock()
                     .await
                     .by_ref()
-                    .take(1024 * 1024)
+                    .take(2 * 1024 * 1024)
                     .read_to_end(&mut data)
                     .await
                     .is_ok();
