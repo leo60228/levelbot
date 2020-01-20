@@ -6,6 +6,7 @@ use async_std::task::{self, block_on};
 use http::status::StatusCode;
 use serenity::http::AttachmentType;
 use serenity::prelude::*;
+use std::collections::VecDeque;
 use std::{iter, thread};
 use tide::{IntoResponse, Request};
 
@@ -121,11 +122,12 @@ fn main() {
     task::spawn(http_server(http_tx, get_levels_handle));
 
     block_on(async move {
-        let mut messages = Vec::new();
+        let messages = Mutex::new(VecDeque::new());
         loop {
             let send = async {
                 let file = http_rx.next().await.unwrap();
-                channel
+                let mut messages = messages.lock().await;
+                let message = channel
                     .read()
                     .send_files(
                         &http.http,
@@ -136,16 +138,20 @@ fn main() {
                         |msg| msg.content("New level!"),
                     )
                     .unwrap();
+                if messages.len() > 0 {
+                    messages.push_front(message);
+                }
             };
             let recv = async {
                 levels_req_rx.next().await.unwrap();
+                let mut messages = messages.lock().await;
                 let initial = messages.len() == 0;
                 loop {
                     let received = channel
                         .read()
                         .messages(&http.http, |builder| {
                             if initial {
-                                if let Some(oldest) = messages.last() {
+                                if let Some(oldest) = messages.back() {
                                     builder.before(oldest)
                                 } else {
                                     builder
@@ -156,9 +162,16 @@ fn main() {
                             .limit(100)
                         })
                         .unwrap();
-                    messages.extend_from_slice(&received);
-                    println!("got {} messages", received.len());
-                    if received.len() < 100 {
+                    let len = received.len();
+                    for message in received {
+                        if initial {
+                            messages.push_back(message);
+                        } else {
+                            messages.push_front(message);
+                        }
+                    }
+                    println!("got {} messages", len);
+                    if len < 100 {
                         break;
                     }
                 }
