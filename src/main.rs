@@ -85,7 +85,7 @@ pub async fn http_server(sender: Sender<File>, handle: GetLevelsHandle) -> Resul
                 .into_response()
         }
     });
-    app.listen("127.0.0.1:8080").await?;
+    app.listen("0.0.0.0:3000").await?;
     Ok(())
 }
 
