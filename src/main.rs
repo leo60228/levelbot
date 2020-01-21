@@ -10,6 +10,8 @@ use std::collections::VecDeque;
 use std::{iter, thread};
 use tide::{IntoResponse, Request};
 
+mod cloudflare;
+
 type Result<'a, T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync + 'a>>;
 
 pub struct File {
@@ -72,6 +74,7 @@ pub async fn http_server(sender: Sender<File>, handle: GetLevelsHandle) -> Resul
                 if is_ok {
                     if req.lock().await.by_ref().bytes().next().await.is_none() {
                         sender.send(File { name, data }).await;
+                        cloudflare::purge_cache().await;
                         return "Data received!".into_response();
                     } else {
                         return "Data too long!"
